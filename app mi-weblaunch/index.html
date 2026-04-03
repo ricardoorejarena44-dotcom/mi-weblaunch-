@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebLaunch AI | Dashboard Real-Time</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); border: 1px solid rgba(226, 232, 240, 0.8); }
+        .ai-chat-container { height: calc(100vh - 250px); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        @keyframes pulse-soft { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .loading-dots { animation: pulse-soft 1.5s infinite; }
+        .modal-bg { background: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="text-slate-800">
+
+    <div class="flex min-h-screen">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 text-white hidden md:flex flex-col">
+            <div class="p-6">
+                <div class="flex items-center gap-2 mb-8">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center font-bold text-xl">W</div>
+                    <span class="text-xl font-bold tracking-tight">WebLaunch<span class="text-blue-400">AI</span></span>
+                </div>
+                
+                <nav class="space-y-2">
+                    <button onclick="switchTab('overview')" id="nav-overview" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-600 text-white transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                        Dashboard
+                    </button>
+                    <button onclick="switchTab('projects')" id="nav-projects" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
+                        Proyectos
+                    </button>
+                    <button onclick="switchTab('ai')" id="nav-ai" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                        Asistente IA
+                    </button>
+                </nav>
+            </div>
+            <div class="mt-auto p-6 border-t border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div id="user-avatar" class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center font-bold text-xs">...</div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-medium truncate" id="user-id-display">Conectando...</p>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">Modo Live</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="flex-1 flex flex-col h-screen overflow-hidden">
+            <header class="h-16 border-b border-slate-200 bg-white flex items-center justify-between px-8 shrink-0">
+                <h2 id="page-title" class="text-lg font-semibold text-slate-700">Panel General</h2>
+                <div class="flex items-center gap-4">
+                    <button onclick="openNewProjectModal()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm">
+                        + Nuevo Lanzamiento
+                    </button>
+                </div>
+            </header>
+
+            <div id="content-container" class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                
+                <!-- Tab: Overview -->
+                <div id="tab-overview" class="tab-content space-y-8">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <p class="text-sm font-medium text-slate-500 mb-1">Sitios Activos</p>
+                            <h3 id="stat-active-sites" class="text-3xl font-bold text-slate-800">0</h3>
+                            <div class="mt-4 flex items-center text-xs text-green-600 font-medium">Actualizado en tiempo real</div>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <p class="text-sm font-medium text-slate-500 mb-1">Visitantes Totales</p>
+                            <h3 id="stat-visitors" class="text-3xl font-bold text-slate-800">0</h3>
+                            <div class="mt-4 flex items-center text-xs text-blue-600 font-medium">Promedio simulado por proyecto</div>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <p class="text-sm font-medium text-slate-500 mb-1">Estado Servidores</p>
+                            <h3 class="text-3xl font-bold text-green-500">100%</h3>
+                            <div class="w-full bg-slate-100 h-2 rounded-full mt-4"><div class="bg-green-500 h-2 rounded-full" style="width: 100%"></div></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <h4 class="font-bold text-slate-700 mb-6">Tráfico Reciente (Simulado)</h4>
+                            <div id="traffic-list" class="space-y-4 text-sm text-slate-500">
+                                Cargando datos de tráfico...
+                            </div>
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl shadow-sm">
+                            <h4 class="font-bold text-slate-700 mb-6">Últimos Proyectos Guardados</h4>
+                            <div id="recent-projects-list" class="space-y-4">
+                                <!-- Dynamic items here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab: Projects -->
+                <div id="tab-projects" class="tab-content hidden space-y-6">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xl font-bold text-slate-800">Tus Proyectos Web</h3>
+                    </div>
+                    <div id="projects-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <!-- Dynamic project cards here -->
+                    </div>
+                </div>
+
+                <!-- Tab: AI Assistant -->
+                <div id="tab-ai" class="tab-content hidden flex flex-col h-full">
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden ai-chat-container">
+                        <div class="p-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                <span class="font-bold text-slate-700">Asistente de Estrategia</span>
+                            </div>
+                        </div>
+                        <div id="chat-messages" class="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"></div>
+                        <div class="p-4 border-t border-slate-100">
+                            <form id="ai-form" class="flex gap-2">
+                                <input type="text" id="ai-input" placeholder="Pregúntame sobre SEO o copy..." class="flex-1 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <button type="submit" id="send-btn" class="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 transition-colors">
+                                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal: New Project -->
+    <div id="new-project-modal" class="fixed inset-0 modal-bg z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl">
+            <h3 class="text-xl font-bold mb-6">Lanzar Nuevo Proyecto</h3>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Nombre del Proyecto</label>
+                    <input type="text" id="input-proj-name" placeholder="Ej: Mi Tienda Online" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">URL o Dominio</label>
+                    <input type="text" id="input-proj-url" placeholder="Ej: mitienda.com" class="w-full px-4 py-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="flex gap-3 pt-4">
+                    <button onclick="closeNewProjectModal()" class="flex-1 px-4 py-3 bg-slate-100 text-slate-600 rounded-xl font-bold hover:bg-slate-200">Cancelar</button>
+                    <button onclick="saveNewProject()" class="flex-1 px-4 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Lanzar Ahora</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global variables within the module
+        let projectsList = [];
+        let currentUser = null;
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'weblaunch-ai-standalone';
+
+        // Fallback for environment
+        const getFirebaseConfig = () => {
+            try {
+                return JSON.parse(__firebase_config);
+            } catch (e) {
+                return null;
+            }
+        };
+
+        const config = getFirebaseConfig();
+
+        if (config) {
+            const app = initializeApp(config);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            // Auth Logic
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (error) {
+                    console.error("Auth error:", error);
+                }
+            };
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUser = user;
+                    document.getElementById('user-id-display').innerText = user.uid;
+                    document.getElementById('user-avatar').innerText = user.uid.substring(0, 2).toUpperCase();
+                    setupDataListeners(user.uid, db);
+                } else {
+                    initAuth();
+                }
+            });
+
+            function setupDataListeners(userId, dbInstance) {
+                const projectsCol = collection(dbInstance, 'artifacts', appId, 'users', userId, 'projects');
+                onSnapshot(projectsCol, (snapshot) => {
+                    projectsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderProjects();
+                    updateStats();
+                }, (error) => console.error("Snapshot error:", error));
+            }
+
+            window.saveNewProject = async () => {
+                const name = document.getElementById('input-proj-name').value.trim();
+                const url = document.getElementById('input-proj-url').value.trim();
+                if (!name || !url || !currentUser) return;
+
+                try {
+                    const projectsCol = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'projects');
+                    await addDoc(projectsCol, {
+                        name, url, createdAt: serverTimestamp(), status: 'online', visitors: Math.floor(Math.random() * 5000)
+                    });
+                    closeNewProjectModal();
+                    document.getElementById('input-proj-name').value = '';
+                    document.getElementById('input-proj-url').value = '';
+                } catch (e) { console.error(e); }
+            };
+        } else {
+            // Demo mode
+            document.getElementById('user-id-display').innerText = "Modo Demo";
+            document.getElementById('user-avatar').innerText = "D";
+            document.getElementById('stat-active-sites').innerText = "3";
+            document.getElementById('stat-visitors').innerText = "12.4k";
+            document.getElementById('traffic-list').innerHTML = `<p class="text-xs italic text-amber-600">Configura Firebase para ver datos reales.</p>`;
+        }
+
+        // UI Global Functions
+        window.switchTab = (tabId) => {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800');
+            });
+            document.getElementById('nav-' + tabId).classList.add('bg-blue-600', 'text-white');
+            document.getElementById('page-title').innerText = { 'overview': 'Panel General', 'projects': 'Mis Proyectos', 'ai': 'Asistente IA' }[tabId];
+        };
+
+        window.openNewProjectModal = () => document.getElementById('new-project-modal').classList.remove('hidden');
+        window.closeNewProjectModal = () => document.getElementById('new-project-modal').classList.add('hidden');
+
+        function renderProjects() {
+            const grid = document.getElementById('projects-grid');
+            const recentList = document.getElementById('recent-projects-list');
+            if (!grid || !recentList) return;
+
+            grid.innerHTML = '';
+            recentList.innerHTML = '';
+            
+            if (projectsList.length === 0) {
+                grid.innerHTML = '<p class="col-span-full text-center text-slate-400 py-10">No hay proyectos registrados.</p>';
+                return;
+            }
+
+            projectsList.forEach(proj => {
+                grid.innerHTML += `
+                    <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                        <div class="h-20 bg-slate-50 rounded-xl mb-4 flex items-center justify-center font-bold text-blue-500 text-2xl">
+                            ${proj.name ? proj.name[0] : 'W'}
+                        </div>
+                        <h4 class="font-bold">${proj.name}</h4>
+                        <p class="text-xs text-slate-500 truncate">${proj.url}</p>
+                    </div>`;
+                recentList.innerHTML += `
+                    <div class="flex justify-between items-center text-sm p-2 hover:bg-slate-50 rounded-lg">
+                        <span class="font-medium">${proj.name}</span>
+                        <span class="font-bold text-blue-600">${proj.visitors || 0}</span>
+                    </div>`;
+            });
+        }
+        
+        function updateStats() {
+            const activeSitesEl = document.getElementById('stat-active-sites');
+            const visitorsEl = document.getElementById('stat-visitors');
+            
+            if (activeSitesEl) activeSitesEl.innerText = projectsList.length;
+            if (visitorsEl) {
+                const total = projectsList.reduce((a, b) => a + (b.visitors || 0), 0);
+                visitorsEl.innerText = total >= 1000 ? (total / 1000).toFixed(1) + 'k' : total;
+            }
+        }
+
+        // AI Logic
+        const apiKey = "";
+        const AI_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+        async function fetchAI(prompt) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${AI_MODEL}:generateContent?key=${apiKey}`;
+            const payload = { 
+                contents: [{ parts: [{ text: prompt }] }], 
+                systemInstruction: { parts: [{ text: "Eres un consultor experto en lanzamientos web. Da consejos accionables sobre SEO, marketing y diseño." }] } 
+            };
+            const r = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            const d = await r.json();
+            return d.candidates[0].content.parts[0].text;
+        }
+
+        const aiForm = document.getElementById('ai-form');
+        aiForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim();
+            if (!text) return;
+            
+            input.value = '';
+            appendChatMessage("YO", text, "user");
+            
+            try {
+                const resp = await fetchAI(text);
+                appendChatMessage("AI", resp, "ai");
+            } catch (err) {
+                appendChatMessage("AI", "Error al procesar la respuesta.", "ai");
+            }
+        });
+
+        function appendChatMessage(sender, text, type) {
+            const container = document.getElementById('chat-messages');
+            const msg = document.createElement('div');
+            msg.className = `flex gap-3 ${type === 'user' ? 'flex-row-reverse' : ''}`;
+            msg.innerHTML = `
+                <div class="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shrink-0 ${type === 'user' ? 'bg-slate-700' : 'bg-blue-600'}">${sender[0]}</div>
+                <div class="p-4 rounded-2xl text-sm max-w-[80%] ${type === 'user' ? 'bg-blue-50 text-slate-800 rounded-tr-none' : 'bg-slate-100 text-slate-800 rounded-tl-none'}">${text}</div>
+            `;
+            container.appendChild(msg);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>
